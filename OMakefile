@@ -1,0 +1,23 @@
+TARGET = slide
+LATEX = platex
+LATEXFLAGS = --kanji=utf8 -interaction=nonstopmode -halt-on-error
+DVIPDFM = dvipdfmx
+DVIPDFMFLAGS =
+
+%.xbb: %.png
+    extractbb $<
+
+TEXDEPS[] =
+    $(TARGET).tex
+    beamerthemesumiilab.sty
+    $(glob i,*.png)
+    $(addsuffix .xbb, $(removesuffix $(glob i,*.png)))
+
+.PHONY: all clean
+
+LaTeXDocument($(TARGET), $(TARGET))
+
+.DEFAULT: $(TARGET).pdf $(TARGET).dvi
+
+clean:
+	rm -f *.acn *.acr *.alg *.aux *.bbl *.blg *.dvi *.fdb_latexmk *.glg *.glo *.gls *.idx *.ilg *.ind *.ist *.lof *.log *.lot *.maf *.mtc *.mtc0 *.nav *.nlo *.out *.pdfsync *.ps *.snm *.synctex.gz *.toc *.vrb *.xdy *.tdo *.fls *.xbb
