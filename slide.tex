@@ -41,18 +41,17 @@
 %% ===============================================
 
 % section の先頭に自動挿入される目次ページ（削除すると、表示されなくなる）
-%\AtBeginSection[]{
-%\begin{frame}
-%  \frametitle{アウトライン}
-%  \tableofcontents[sectionstyle=show/shaded,subsectionstyle=show/show/hide]
-%\end{frame}}
-%% subsection の先頭に自動挿入される目次ページ（削除すると、表示されなくなる）
-%\AtBeginSubsection[]{
-%\begin{frame}
-%  \frametitle{アウトライン}
-%  \tableofcontents[sectionstyle=show/shaded,subsectionstyle=show/shaded/hide]
-%\end{frame}}
-%
+\AtBeginSection[]{
+\begin{frame}
+  \frametitle{アウトライン}
+  \tableofcontents[sectionstyle=show/shaded,subsectionstyle=show/show/hide]
+\end{frame}}
+% subsection の先頭に自動挿入される目次ページ（削除すると、表示されなくなる）
+\AtBeginSubsection[]{
+\begin{frame}
+  \frametitle{アウトライン}
+  \tableofcontents[sectionstyle=show/shaded,subsectionstyle=show/shaded/hide]
+\end{frame}}
 %% 現在の section 以外を非表示にする場合は以下のようにする
 
 %% \AtBeginSection[]{
@@ -160,6 +159,8 @@
 	\end{itemize}
 \end{frame}
 
+\section{簡単な問題と入出力テンプレ}
+
 \begin{frame}
 	\frametitle{(早速ですが)問題例1: 単純な入出力}
 	\begin{block}{}
@@ -174,8 +175,6 @@
 	{\large 競プロではこの問題と同じように，標準入力から\\受け取った値を加工して標準出力に流すプログラムが求められる場合が多い}
 \end{frame}
 
-\section{典型的問題とテンプレ}
-
 \begin{frame}[fragile]
 	\frametitle{OCamlによる解答例}
 	\begin{lstlisting}
@@ -185,7 +184,7 @@ let () =
     (fun b c -> b, c) in
   let s = @r{Scanf.scanf}@ "%s\n" (fun s -> s) in
   @r{Printf.printf}@ "%d %s\n" (a + b + c) s
-	\end{lstlisting}
+\end{lstlisting}
 	\begin{itemize}
 		\item 入力には\text{Scanf.scanf}を使おう
 			\begin{itemize}
@@ -214,7 +213,7 @@ val _ = TextIO.inputLine TextIO.stdIn
 val SOME s = TextIO.inputLine TextIO.stdIn
 val () = print
   (Int.toString (a + b + c) ^ " " ^ s)
-	\end{lstlisting}
+\end{lstlisting}
 	\begin{itemize}
 		\item 数値の入力には\text{StringCvt}を用いる
 			\begin{itemize}
@@ -257,7 +256,7 @@ let () =
     (ys, a :: xs)) ([], []) as_
   |> (fun (xs, ys) -> ys @ List.rev xs)
   |> List.iter (Printf.printf "%d ")
-	\end{lstlisting}
+\end{lstlisting}
 	\begin{itemize}
 		\item 任意個のデータを入力する際には\text{Array.init}が便利
 		\item 陽な再帰関数を書く前に\text{fold}で書けないか検討しよう
@@ -275,7 +274,7 @@ val () =
   app(fn x=>print(Int.toString x^" "))(ys@rev xs);
   print "\n"
  end
-	\end{lstlisting}
+\end{lstlisting}
 	\begin{itemize}
 		\item 任意個のデータを入力する際には\text{List.tabulate}が便利
 		\item 陽な再帰関数を書く前に\text{fold} (ry
@@ -283,6 +282,93 @@ val () =
 	\begin{flushright}
 		構文が重い（半ギレ）
 	\end{flushright}
+\end{frame}
+
+\section{便利な標準ライブラリ関数の紹介}
+
+\begin{frame}
+	\frametitle{\text{List.fold\_left}及び\text{foldl}}
+	\begin{itemize}
+		\item ライブラリを整備して良し，問題を解いて良し
+		\item ABC/ARCのCやAGCのAぐらいまではfoldだけで解ける場合が多い
+		\item まずはこれを使いこなしましょう
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{\text{fold}の例1: 総和}
+	\begin{itemize}
+		\item ある時は総和を求め
+	\begin{lstlisting}
+List.fold_left ( + ) 0 xs
+\end{lstlisting}
+	\vfill
+		\item またある時は総乗を求め
+	\begin{lstlisting}
+List.fold_left ( * ) 1 xs
+\end{lstlisting}
+	\vfill
+		\item 剰余類もなんのその
+	\begin{lstlisting}
+List.fold_left (fun x y -> x * y mod n) 1
+  List.map (fun x -> x mod n) xs
+\end{lstlisting}
+	\end{itemize}
+	\begin{flushright}
+		モノイドだしタイトルは総和で良いかと
+	\end{flushright}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{foldの例2: アキュムレータを増やしてみる}
+	\begin{itemize}
+		\item 隣り合った要素を取り出したり
+			\begin{lstlisting}
+let hd :: tl = xs in
+List.fold_left (fun (ps, x) y ->
+  ((x, y) :: ps, y)) ([], hd) tl
+\end{lstlisting}
+
+		\item 尺取もいける
+			\begin{lstlisting}
+List.fold_left (fun (m, s) a ->
+let rec drop s=let a'=Queue.pop q in
+if a=a' then s else drop(IntSet.remove a' s)
+in Queue.push a q;if IntSet.mem a s then
+  (max m (IntSet.cardinal s), drop s)
+else (m, IntSet.add a s)) (0, IntSet.empty) as_
+|> (fun (m,s)->max m(IntSet.cardinal s))
+\end{lstlisting}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{\text{map}と\text{concat} (リストモナド)}
+\end{frame}
+
+\begin{frame}
+	\frametitle{有限集合(Set)と有限写像(Map)}
+	\begin{itemize}
+		\item 純粋関数型に書きたい時便利
+		\item OCamlのSetとMapは最大値/最小値の取り出しをサポートしている:\\
+			簡易的な優先度付きキューになる！
+			\begin{itemize}
+				\item 重複を許さないので気を付けよう
+				\item 優先度を減らす操作が無いのでダイクストラ法はキツい
+				\item プリム法ぐらいならいける
+			\end{itemize}
+		\item SMLだとNJ Libraryにあります
+			\begin{itemize}
+				\item こちらは最大値/最小値の取り出しをサポートしない
+			\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\section{To DP or Not To DP\:}
+
+\begin{frame}[fragile]
+	\frametitle{That is the question.}
+
 \end{frame}
 
 \end{document}
