@@ -331,19 +331,35 @@ List.fold_left (fun (ps, x) y ->
 
 		\item 尺取もいける
 			\begin{lstlisting}
-List.fold_left (fun (m, s) a ->
-let rec drop s=let a'=Queue.pop q in
-if a=a' then s else drop(IntSet.remove a' s)
-in Queue.push a q;if IntSet.mem a s then
-  (max m (IntSet.cardinal s), drop s)
-else (m, IntSet.add a s)) (0, IntSet.empty) as_
-|> (fun (m,s)->max m(IntSet.cardinal s))
+List.fold_left (fun (m, s) a -> let rec
+drop s=let a'=Queue.pop q in if a=a' then
+s else drop(IntSet.remove a' s)in
+Queue.push a q;if IntSet.mem a s then
+(max m (IntSet.cardinal s), drop s)
+else(m,IntSet.add a s))(0,IntSet.empty)as_
 \end{lstlisting}
 	\end{itemize}
 \end{frame}
 
-\begin{frame}
+\begin{frame}[fragile]
 	\frametitle{\text{map}と\text{concat} (リストモナド)}
+	\begin{itemize}
+		\item 組み合わせの列挙に便利
+		\item 再帰でDFSを書かなくても総当たりを書けることもある
+	\end{itemize}
+	冪集合
+	\begin{lstlisting}
+List.fold_left (fun xss x ->
+  List.concat @@ List.map (fun xs ->
+    [xs; x :: xs]) xss) [[]] xs
+\end{lstlisting}
+	abcからなる長さnの文字列を列挙
+	\begin{lstlisting}
+Array.init n (fun _ -> ['a'; 'b'; 'c'])
+|> Array.fold_left (fun ss cs ->
+  List.concat @@ List.map (fun s ->
+    List.map (fun c -> c :: s) cs) ss) [[]]
+\end{lstlisting}
 \end{frame}
 
 \begin{frame}
@@ -369,6 +385,28 @@ else (m, IntSet.add a s)) (0, IntSet.empty) as_
 \begin{frame}[fragile]
 	\frametitle{That is the question.}
 
+\end{frame}
+
+\section{ライブラリ整備について}
+
+% べき乗
+% にぶたん
+
+\section{まとめ}
+
+\begin{frame}
+	\frametitle{まとめ}
+	\begin{itemize}
+		\item 高階関数の表現力を武器に，関数プログラミングでも結構闘える
+		\item 抽象化機構を武器に，競プロであってもコードの再利用性を高めよう
+			\begin{itemize}
+				\item コードを書かなければバグもない
+			\end{itemize}
+		\item 時には定理証明支援系の手を借りるのも良い
+	\end{itemize}
+	\begin{center}
+		{\LARGE MLerにはMLerのやり方がある}
+	\end{center}
 \end{frame}
 
 \end{document}
