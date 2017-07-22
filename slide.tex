@@ -117,6 +117,8 @@
 \begin{document}
 \frame[plain]{\titlepage}% タイトルページ
 
+\section*{導入}
+
 \begin{frame}
 	\frametitle{自己紹介}
 	\begin{itemize}
@@ -157,6 +159,13 @@
 				\item intが31bitなので最悪
 			\end{itemize}
 	\end{itemize}
+\end{frame}
+
+\section*{アウトライン}
+
+\begin{frame}
+  \frametitle{アウトライン}
+  \tableofcontents[sectionstyle=show,subsectionstyle=hide]
 \end{frame}
 
 \section{簡単な問題と入出力テンプレ}
@@ -384,13 +393,114 @@ Array.init n (fun _ -> ['a'; 'b'; 'c'])
 
 \begin{frame}[fragile]
 	\frametitle{That is the question.}
+	{\Large 競プロでよく用いられるDP，しかし…}
+	\begin{lstlisting}
+let cmb = Array.make_matrix n n 0 in
+for i = 0 to n - 1 do
+ cmb.(i).(0) <- 1; cmb.(i).(i) <- 1 done;
+for i = 1 to n - 1 do for j = 1 to i do
+ cmb.(i).(j) <- cmb.(i - 1).(j - 1)
+ + cmb.(i - 1).(j) done done
+\end{lstlisting}
+	\begin{itemize}
+		\item 評価順にシビア
+		\item 値域によってデータ構造を使い分ける必要がある
+			\begin{itemize}
+				\item コードの再利用性に乏しい
+			\end{itemize}
+	\end{itemize}
+\end{frame}
 
+\begin{frame}[fragile]
+	\frametitle{メモ化再帰の導入}
+	\begin{itemize}
+		\item 評価順は計算機が考えれば良い
+	\end{itemize}
+	\begin{lstlisting}
+let dp = Array.make_matrix n n None in
+let rec body n r =
+  if r = 0 || n = r then 1
+  else cmb (n - 1) r + cmb (n - 1) (r - 1)
+and cmb n r =
+  match dp.(n).(r) with
+  | Some x -> x
+  | None ->
+      let x = body n r in
+      dp.(n).(r) <- Some x; x
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{ハッシュの導入・高階関数に}
+	\begin{itemize}
+		\item OCamlの\text{Hashtbl}はハッシュ関数を面倒見てくれる
+		\item メモ化部分を高階関数で括り出そう
+	\end{itemize}
+	\begin{lstlisting}
+let memoize n f =
+  let dp = Hashtbl.create n in
+  let rec get x =
+    try Hashtbl.find dp x with Not_found ->
+      let r = f get x in
+      Hashtbl.add dp x r; r in get
+let cmb = memoize 100 (fun cmb (n, r) ->
+  if r = 0 || n = r then 1
+  else cmb (n - 1, r) + cmb (n - 1, r - 1))
+\end{lstlisting}
 \end{frame}
 
 \section{ライブラリ整備について}
 
-% べき乗
-% にぶたん
+\begin{frame}
+	\frametitle{二分探索にまつわる様々な言い伝え}
+	\begin{itemize}
+		\item 「無限ループに陥りやすい」
+		\item 「添え字が1ずれる」
+		\item 「半開区間でやれば誤りにくい」
+	\end{itemize}
+	\begin{center}
+		\LARGE $\Uparrow$\\
+		毎回手書きするからバグるのでは？
+	\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{高階関数による抽象化}
+	\Large
+	再利用できるライブラリを用意すればよい
+	\begin{lstlisting}
+let rec upper_bound p l r =
+  if r <= l + 1 then l
+  else
+    let m = (l + r) / 2 in
+    if p m then upper_bound p m r
+    else upper_bound p l m
+\end{lstlisting}
+	\vfill
+	しかし，肝心のライブラリが正しいとは限らない…
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{まさかの時の定理証明支援系}
+	\Large Coqで証明を付ければ解決！
+	\begin{lstlisting}
+Require Import Arith Omega Recdef.
+Variable P : nat -> Prop.
+Hypothesis P_dec : forall n,
+  { P n } + { ~P n }.
+Function lower_bound_aux b n { wf lt n } :=
+(* (中略) *)
+Theorem lower_bound_spec l r :
+  l <= threshold <= r ->
+  lower_bound l r = threshold.
+\end{lstlisting}
+	\begin{itemize}
+		\item Coqには与えられたプログラムをOCamlに変換する機能がある
+			\begin{itemize}
+				\item SMLの人はIsabelle/HOL使って
+			\end{itemize}
+	\end{itemize}
+\end{frame}
 
 \section{まとめ}
 
@@ -398,7 +508,7 @@ Array.init n (fun _ -> ['a'; 'b'; 'c'])
 	\frametitle{まとめ}
 	\begin{itemize}
 		\item 高階関数の表現力を武器に，関数プログラミングでも結構闘える
-		\item 抽象化機構を武器に，競プロであってもコードの再利用性を高めよう
+		\item 抽象化機構を利用して，競プロであってもコードの再利用性を高めよう
 			\begin{itemize}
 				\item コードを書かなければバグもない
 			\end{itemize}
